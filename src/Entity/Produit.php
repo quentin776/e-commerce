@@ -2,6 +2,8 @@
 
 namespace App\Entity;
 
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
@@ -32,7 +34,7 @@ class Produit
     private $prix;
 
     /**
-     * @ORM\Column(type="int", length=255)
+     * @ORM\Column(type="integer")
      */
     private $Stock;
 
@@ -40,6 +42,16 @@ class Produit
      * @ORM\Column(type="string", length=255)
      */
     private $photo;
+
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\ContenuPanier", mappedBy="produit", orphanRemoval=true)
+     */
+    private $contenu_paniers;
+
+    public function __construct()
+    {
+        $this->contenu_paniers = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -94,14 +106,45 @@ class Produit
         return $this;
     }
 
-    public function getPhoto(): ?string
+    public function getPhoto() 
     {
         return $this->photo;
     }
 
-    public function setPhoto(string $photo): self
+    public function setPhoto($photo): self
     {
         $this->photo = $photo;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection|ContenuPanier[]
+     */
+    public function getContenuPaniers(): Collection
+    {
+        return $this->contenu_paniers;
+    }
+
+    public function addContenuPanier(ContenuPanier $contenuPanier): self
+    {
+        if (!$this->contenu_paniers->contains($contenuPanier)) {
+            $this->contenu_paniers[] = $contenuPanier;
+            $contenuPanier->setProduit($this);
+        }
+
+        return $this;
+    }
+
+    public function removeContenuPanier(ContenuPanier $contenuPanier): self
+    {
+        if ($this->contenu_paniers->contains($contenuPanier)) {
+            $this->contenu_paniers->removeElement($contenuPanier);
+            // set the owning side to null (unless already changed)
+            if ($contenuPanier->getProduit() === $this) {
+                $contenuPanier->setProduit(null);
+            }
+        }
 
         return $this;
     }
