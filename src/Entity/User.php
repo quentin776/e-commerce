@@ -2,14 +2,19 @@
 
 namespace App\Entity;
 
+
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Security\Core\User\UserInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
+
 /**
- * @ORM\Entity(repositoryClass="App\Repository\UtilisateurRepository")
+ * @ORM\Entity(repositoryClass="App\Repository\UserRepository")
+ * @UniqueEntity(fields={"email"}, message="There is already an account with this email")
  */
-class Utilisateur
+class User implements UserInterface, \Serializable
 {
     /**
      * @ORM\Id()
@@ -26,7 +31,7 @@ class Utilisateur
     /**
      * @ORM\Column(type="string", length=255)
      */
-    private $prenom;
+    private $username;
 
     /**
      * @ORM\Column(type="string", length=255)
@@ -44,7 +49,7 @@ class Utilisateur
     private $roles;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\Panier", mappedBy="utilisateur", orphanRemoval=true)
+     * @ORM\OneToMany(targetEntity="App\Entity\Panier", mappedBy="User", orphanRemoval=true)
      */
     private $paniers;
 
@@ -70,14 +75,14 @@ class Utilisateur
         return $this;
     }
 
-    public function getPrenom(): ?string
+    public function getUsername(): ?string
     {
-        return $this->prenom;
+        return $this->username;
     }
 
-    public function setPrenom(string $prenom): self
+    public function setUsername(string $username): self
     {
-        $this->prenom = $prenom;
+        $this->username = $username;
 
         return $this;
     }
@@ -98,6 +103,7 @@ class Utilisateur
     {
         return $this-$password;
     }
+    
 
     public function setPassword(string $password): self
     {
@@ -117,6 +123,7 @@ class Utilisateur
 
         return $this;
     }
+    
 
     /**
      * @return Collection|Panier[]
@@ -130,7 +137,7 @@ class Utilisateur
     {
         if (!$this->paniers->contains($panier)) {
             $this->paniers[] = $panier;
-            $panier->setUtilisateur($this);
+            $panier->setUser($this);
         }
 
         return $this;
@@ -141,11 +148,46 @@ class Utilisateur
         if ($this->paniers->contains($panier)) {
             $this->paniers->removeElement($panier);
             // set the owning side to null (unless already changed)
-            if ($panier->getUtilisateur() === $this) {
-                $panier->setUtilisateur(null);
+            if ($panier->getUser() === $this) {
+                $panier->setUser(null);
             }
         }
 
         return $this;
     }
+
+    public function eraseCredentials()
+    {
+    }
+
+    /* @see \Serializable::serialize() */
+    public function serialize()
+    {
+        return serialize(array(
+            $this->id,
+            $this->username,
+            $this->password,
+            // see section on salt below
+            // $this->salt,
+        ));
+    }
+
+    /* @see \Serializable::unserialize() */
+    public function unserialize($serialized)
+    {
+        list (
+            $this->id,
+            $this->username,
+            $this->password,
+            // see section on salt below
+            // $this->salt
+        ) = unserialize($serialized);
+    }
+public function getSalt()
+    {
+        // you may need a real salt depending on your encoder
+        // see section on salt below
+        return null;
+    }
+   
 }
